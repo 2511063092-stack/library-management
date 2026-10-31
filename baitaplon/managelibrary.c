@@ -247,3 +247,64 @@ int ReturnBook(Book *Book_head, Reader *reader_head, Borrow *borrow_head, char i
     }
     return 0; // không tìm thấy phiếu mượn
 }
+
+// --- 2.5. CÁC HÀM SẮP XẾP, TÌM KIẾM VÀ THỐNG KÊ ---
+
+// 2.5.1. Hàm sắp xếp sách (selection sort) mode mode: 1 = theo tên sách, 2 = theo năm xuất bản, 3 = theo số lượng
+void selectionSortBook(Book *head, int mode){
+    for(Book *i = head; i != NULL && i->next != NULL; i = i->next){
+        Book *minBook = i; // giả sử book i là nhỏ nhất 
+        for(Book *j = i->next; j != NULL; j = j->next){
+            int check = 0;
+            if(mode == 1) check = (strcmp(j->data.name_book, minBook->data.name_book) < 0); // so sánh tên
+            else if(mode == 2) check = (j->data.year_publish < minBook->data.year_publish); // so sánh năm XB
+            else if(mode == 3) check = (j->data.quantity < minBook->data.quantity); // so sánh số lượng
+            if(check) minBook = j; // cập nhật lại node nhỏ nhất
+        }
+        if(minBook != i){
+            // neu mang chua sap xep xong 
+            Book_info tmp = i->data; // đổi chỗ dữ liệu của 2 node
+            i->data = minBook->data;
+            minBook->data = tmp;
+        }
+    }
+}
+
+// 2.5.2. Hàm tìm kiếm sách bằng sắp xếp chọn
+Book *searchBook(Book *head, char exact_name[]){
+    selectionSortBook(head, 1); // bước 1: sắp xếp sách theo tên từ A-Z
+    while(head != NULL){
+        int cmp = strcmp(head->data.name_book, exact_name);
+        if(cmp == 0) return head; // tìm thấy cuốn sách
+        if(cmp > 0) break; // dừng sớm vì tên sách hiện tại đã lớn hơn tên cần tìm
+        head = head->next;
+    }
+    return NULL; // không tìm thấy
+}
+
+// 2.5.3. Hàm tìm số sách đang mượn lớn nhất của độc giả
+int maxReaderBorrow(Reader *head){
+    int max = 0;
+    while(head != NULL){
+        if(head->data.current_borrowed > max) max = head->data.current_borrowed; // cập nhật kỷ lục mới
+        head = head->next;
+    }
+    return max; // trả về số lượng lớn nhất
+}
+
+// 2.5.4 Hàm tìm số lượt được mượn lớn nhất của sách
+int maxBookBorrow(Book *head){
+    int max = 0;
+    while(head != NULL){
+        if(head->data.borrow_count > max) max = head->data.borrow_count; // cập nhật kỷ lục mới
+        head = head->next;
+    }
+    return max; // trả về số lượt lớn nhất
+}
+
+// 2.5.5 hàm giải phóng toàn bộ bộ nhớ khi thoát chương trình
+void freeAll(Book **b_head, Reader **r_head, Borrow **m_head){
+    while(*b_head != NULL){ Book *tmp = *b_head; *b_head = (*b_head)->next; free(tmp); } // xóa DS sách
+    while(*r_head != NULL){ Reader *tmp = *r_head; *r_head = (*r_head)->next; free(tmp); } // xóa DS độc giả
+    while(*m_head != NULL){ Borrow *tmp = *m_head; *m_head = (*m_head)->next; free(tmp); } // xóa DS mượn
+}
